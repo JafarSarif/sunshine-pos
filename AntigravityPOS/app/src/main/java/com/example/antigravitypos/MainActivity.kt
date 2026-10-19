@@ -26,6 +26,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var activePrintWebView: WebView? = null
     private val CAMERA_PERMISSION_REQUEST_CODE = 1001
+    private val APP_URL = "https://sunshine-inventry-management-system.vercel.app/"
 
     inner class AndroidPrintBridge {
         @JavascriptInterface
@@ -49,7 +50,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        loadDataWithBaseURL("http://localhost:3000/", htmlContent, "text/html", "UTF-8", null)
+                        loadDataWithBaseURL(APP_URL, htmlContent, "text/html", "UTF-8", null)
                     }
                 } catch (e: Exception) {
                     Toast.makeText(this@MainActivity, "Print error: ${e.message}", Toast.LENGTH_LONG).show()
@@ -150,8 +151,8 @@ class MainActivity : ComponentActivity() {
 
         setContentView(rootLayout)
 
-        // Load the local POS & Inventory system via adb reverse or local network
-        webView.loadUrl("http://localhost:3000")
+        // Load the live Sunshine POS & Inventory cloud system
+        webView.loadUrl(APP_URL)
     }
 
     private fun checkAndRequestCameraPermission() {
