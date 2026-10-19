@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Sunshine POS &amp; Inventory System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/png" href="img/sunshine_logo_192.png">
+  <link rel="apple-touch-icon" href="img/sunshine_logo_192.png">
+</head>
+<body>
+
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="brand-wrapper">
+      <img src="img/sunshine_logo.png" alt="Sunshine Logo" class="brand-logo-img">
+      <div class="brand-title">
+        <h1>SUNSHINE INVENTRY SYSTEM</h1>
+        <p>Record (POS) &amp; Inventory</p>
+      </div>
+    </div>
+
+    <!-- Header Actions (Quick Cart & Scanner trigger) -->
+    <div class="header-actions">
+      <button class="header-cart-btn" id="headerCartBtn" title="View Cart">
+        <span>🛒</span>
+        <span class="header-cart-badge" id="headerCartCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Views Container -->
+  <main class="container">
+
+    <!-- ================================================================= -->
+    <!-- VIEW 1: INFINATORT (Point of Sale & Smartphone Barcode Scanning) -->
+    <!-- ================================================================= -->
+    <section id="viewInfinatort" class="view-section active">
+      <div class="pos-layout">
+
+        <!-- Left: Camera Viewfinder & Catalog -->
+        <div class="pos-left">
+
+          <!-- Smartphone Camera Barcode Scanner Card (Collapsible) -->
+          <div class="scanner-card collapsed" id="scannerCardContainer">
+            <div class="scanner-header">
+              <div class="scanner-title">
+                <span>📱 Barcode Scanner</span>
+              </div>
+              <div class="scanner-controls">
+                <button id="btnToggleTorch" class="btn-icon" style="display: none;" title="Toggle Flashlight">🔦</button>
+                <button id="btnSwitchCamera" class="btn-icon" title="Switch Rear/Front Camera">🔄</button>
+                <button id="btnToggleScanner" class="btn-primary" style="padding: 0.45rem 0.85rem; font-size: 0.82rem;">📷 Open Camera</button>
+              </div>
+            </div>
+
+            <!-- Viewport & Reticle Overlay (Hidden when collapsed) -->
+            <div class="scanner-viewport-wrapper" id="scannerViewportWrapper" style="display: none;">
+              <div id="reader"></div>
+              <div class="scan-overlay">
+                <div class="scan-box">
+                  <div class="scan-laser"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Status & Feedback Bar -->
+            <div class="scan-feed-status">
+              <div class="status-badge idle" id="scannerStatusBadge">
+                <span class="status-pulse"></span>
+                <span id="scannerStatusText">Camera standby — Tap "Open Camera" to scan</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catalog Search & Category Filter Card -->
+          <div class="catalog-card">
+            <div class="search-bar-row">
+              <div class="input-group">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="catalogSearchInput" placeholder="Search product name, category or barcode...">
+              </div>
+            </div>
+
+            <!-- Category Pills Filter -->
+            <div class="category-chips" id="categoryChips"></div>
+
+            <!-- Products Grid (2 columns on mobile) -->
+            <div class="products-grid" id="productsGrid"></div>
+          </div>
+
+        </div>
+
+        <!-- Right: Infinatort Cart & Checkout Panel -->
+        <div class="pos-right" id="cartSectionAnchor">
+          <div class="cart-card">
+            <div class="cart-header">
+              <div class="cart-title">
+                <span>🧾 Current Bill</span>
+                <span class="cart-count" id="cartCountBadge">0</span>
+              </div>
+              <button class="btn-clear-cart" id="btnClearCart">Clear</button>
+            </div>
+
+            <!-- Customer Details & Saved Directory Integration -->
+            <div class="customer-section-box">
+              <div class="customer-section-header">
+                <span class="customer-label">👤 Customer</span>
+                <button type="button" class="btn-customer-directory" id="btnOpenCustomerDirectory" title="Search Sunshine Saved Customer Directory">
+                  👥 Saved Directory (<span id="savedCustomerBadgeCount">99</span>)
+                </button>
+              </div>
+
+              <div class="customer-input-row">
+                <div class="customer-autocomplete-wrap">
+                  <input type="text" id="customerNameInput" class="form-control" placeholder="Search / Customer Name" autocomplete="off">
+                  <div id="customerNameDropdown" class="customer-dropdown-menu hidden"></div>
+                </div>
+                <div class="customer-autocomplete-wrap">
+                  <input type="tel" id="customerPhoneInput" class="form-control" placeholder="Mobile Number" autocomplete="off">
+                  <div id="customerPhoneDropdown" class="customer-dropdown-menu hidden"></div>
+                </div>
+                <button type="button" class="btn-clear-customer" id="btnClearCustomer" title="Clear Customer">✕</button>
+              </div>
+
+              <!-- Selected Customer Pill / Badge -->
+              <div id="customerSelectedBadge" class="customer-selected-badge hidden">
+                <span class="badge-icon">✓</span>
+                <span class="badge-name" id="badgeCustomerName">Walk-in</span>
+                <span class="badge-tag" id="badgeCustomerTag"></span>
+              </div>
+            </div>
+
+            <!-- Dynamic Cart Items Container -->
+            <div class="cart-items-list" id="cartItemsList"></div>
+
+            <!-- Billing Totals & Discount Calculation -->
+            <div class="cart-summary">
+              <div class="summary-row">
+                <span>Subtotal</span>
+                <strong id="summarySubtotal">₹0.00</strong>
+              </div>
+              <div class="summary-row" style="align-items: center;">
+                <span>Discount (₹)</span>
+                <input type="number" id="discountInput" class="form-control" style="width: 90px; text-align: right; padding: 0.3rem 0.5rem;" placeholder="0">
+              </div>
+              <div class="summary-row total-row">
+                <span>Total Amount</span>
+                <span class="total-val" id="summaryTotal">₹0.00</span>
+              </div>
+
+              <!-- Payment Method Selector -->
+              <div class="payment-selector">
+                <label class="payment-label">Payment Method</label>
+                <div class="payment-options">
+                  <button class="payment-btn active" data-method="UPI">⚡ UPI</button>
+                  <button class="payment-btn" data-method="Cash">💵 Cash</button>
+                  <button class="payment-btn" data-method="Card">💳 Card</button>
+                </div>
+              </div>
+
+              <!-- Complete Sale & Webhook Trigger Button -->
+              <button class="btn-complete-sale" id="btnCompleteSale" disabled>
+                <span>✓ Complete Sale</span>
+                <span class="ledger-pill">Sync Ledger</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 2: ANTIGRAVITY (Comprehensive Inventory Management) -->
+    <!-- ================================================================= -->
+    <section id="viewAntigravity" class="view-section">
+      <!-- Cloud Synchronization Status Bar -->
+      <div class="cloud-sync-bar" style="display: flex; align-items: center; justify-content: space-between; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 0.6rem 0.9rem; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.25rem;">☁️</span>
+          <div>
+            <div style="font-weight: 800; font-size: 0.82rem; color: #10b981; display: flex; align-items: center; gap: 0.4rem;">
+              <span id="cloudSyncStatusBadge">Cloud Synced with Supabase</span>
+              <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--text-secondary);" id="cloudSyncDetailText">Auto-syncs across all phones, tablets &amp; PCs</div>
+          </div>
+        </div>
+        <button id="btnManualCloudSync" type="button" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.45); color: #10b981; border-radius: 8px; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+          <span id="syncIconSpin">🔄</span> <span id="syncBtnText">Sync Cloud Now</span>
+        </button>
+      </div>
+
+      <!-- Quick Dashboard Metric Counters (2x2 on mobile) -->
+      <div class="inventory-stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Total SKUs</span>
+          <span class="stat-value" id="statTotalProducts">0</span>
+        </div>
+        <div class="stat-card alert">
+          <span class="stat-label">Low Stock Alerts</span>
+          <span class="stat-value" id="statLowStock">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Stock Units</span>
+          <span class="stat-value" id="statTotalStock">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Inventory Value</span>
+          <span class="stat-value" id="statTotalValue">₹0</span>
+        </div>
+      </div>
+
+      <!-- Inventory Table & Filters Container -->
+      <div class="inventory-container">
+        <div class="inventory-toolbar">
+          <div class="toolbar-search-row">
+            <input type="text" id="inventorySearchInput" class="form-control" placeholder="Search by name, barcode, or category...">
+            <select id="inventoryCategoryFilter" class="form-control" style="width: 140px;">
+              <option value="">All Categories</option>
+            </select>
+          </div>
+
+          <div class="inventory-actions">
+            <button class="btn-primary" id="btnScanToAddProduct" style="background: linear-gradient(135deg, #06b6d4, #3b82f6); flex: 1;">📷 Scan to Add/Edit</button>
+            <button class="btn-primary" id="btnAddProduct" style="flex: 1;">➕ Add Product</button>
+          </div>
+        </div>
+
+        <!-- Responsive Table Container (Transforms to Mobile Cards on Phones) -->
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Barcode ID</th>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Retail Price</th>
+                <th>Stock Units</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================= -->
+    <!-- VIEW 3: LEDGER PORTAL & WEBHOOK SETTINGS -->
+    <!-- ================================================================= -->
+    <!-- ================================================================= -->
+    <!-- VIEW 3: SUNSHINE LEDGER PORTAL & WEBHOOK SETTINGS                -->
+    <!-- ================================================================= -->
+    <section id="viewLedger" class="view-section">
+      <div class="inventory-container" style="max-width: 800px; margin: 0 auto;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+          <h2 style="font-size: 1.15rem; margin: 0;">🔗 Sunshine Ledger Integration</h2>
+          <span id="sunshineStatusBadge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 9999px;">
+            ● Connected to Cloud
+          </span>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+          Every sale completed in Infinatort POS is instantly synchronized directly into your <strong>Sunshine Ledger (Section 3A: Gadget &amp; Repair Sales)</strong>, updating daily totals, cash flow calculations, and individual item profit records in Supabase.
+        </p>
+
+        <!-- Live Sunshine Ledger Cloud KPI Card -->
+        <div style="background: var(--bg-card); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
+          <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: #10b981; margin-bottom: 0.5rem;">
+            📊 Section 3A Live Sync Status (Today's Sheet)
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+            <div style="background: var(--bg-input); padding: 0.75rem; border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">TODAY'S GADGET SALES TOTAL</div>
+              <div id="sunshineTodayTotal" style="font-size: 1.25rem; font-weight: 900; color: #10b981; font-family: monospace;">₹ 0.00</div>
+            </div>
+            <div style="background: var(--bg-input); padding: 0.75rem; border-radius: var(--radius-sm);">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">ITEMS RECORDED TODAY</div>
+              <div id="sunshineTodayCount" style="font-size: 1.25rem; font-weight: 900; color: #38bdf8; font-family: monospace;">0 items</div>
+            </div>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.6rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.25rem;">
+            <span>Target: <strong>daily_ledgers &amp; gadget_sales_entries</strong></span>
+            <span id="sunshineLedgerDate" style="color: var(--text-muted);">Date: --</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="inputLedgerUrl">Ledger Synchronization Webhook Endpoint</label>
+          <div style="display: flex; gap: 0.5rem; flex-direction: column;">
+            <input type="text" id="inputLedgerUrl" class="form-control" placeholder="/api/ledger/sync-sunshine-gadgets">
+            <button class="btn-primary" id="btnSaveLedgerSettings" style="align-self: flex-start;">Save Endpoint URL</button>
+          </div>
+          <small style="color: var(--text-muted); font-size: 0.72rem; display: block; margin-top: 0.35rem;">
+            Default endpoint: <code>/api/ledger/sync-sunshine-gadgets</code> (Direct Supabase Cloud sync)
+          </small>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
+          <button class="btn-icon" id="btnTestWebhook" style="width: 100%; height: 42px; gap: 0.4rem; font-size: 0.85rem; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #10b981;">
+            ⚡ Send Sample Test Sale to Sunshine Ledger
+          </button>
+          <button class="btn-icon" id="btnRefreshLedgerLogs" style="width: 100%; height: 42px; gap: 0.4rem; font-size: 0.85rem;">
+            🔄 Refresh Sunshine Ledger Status
+          </button>
+        </div>
+
+        <!-- Live Sync Response Monitor -->
+        <div style="margin-top: 1.25rem;">
+          <h4 style="font-size: 0.88rem; margin-bottom: 0.5rem;">Sunshine Ledger Sync Monitor:</h4>
+          <pre id="mockLedgerLogsDisplay" style="background: var(--bg-input); padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.72rem; overflow-x: auto; max-height: 200px; color: #38bdf8;">Checking connection...</pre>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================================================================= -->
+  <!-- FLOATING BOTTOM CART BAR (Appears on Mobile when cart > 0)       -->
+  <!-- ================================================================= -->
+  <div class="floating-cart-bar" id="floatingCartBar" style="display: none;">
+    <div class="floating-cart-info">
+      <span class="floating-cart-pill" id="floatCartBadge">0 items</span>
+      <span class="floating-cart-total" id="floatCartTotal">₹0.00</span>
+    </div>
+    <button class="floating-cart-btn" id="btnScrollToCart">
+      View Cart & Pay →
+    </button>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- NATIVE BOTTOM NAVIGATION BAR (Fixed at bottom on Mobile)         -->
+  <!-- ================================================================= -->
+  <nav class="bottom-nav">
+    <button class="bottom-nav-item active" data-target="viewInfinatort">
+      <span class="nav-icon">🛒</span>
+      <span class="nav-text">Record (POS)</span>
+    </button>
+    <button class="bottom-nav-item" data-target="viewAntigravity">
+      <span class="nav-icon">📦</span>
+      <span class="nav-text">Inventory</span>
+    </button>
+    <button class="bottom-nav-item" data-target="viewLedger">
+      <span class="nav-icon">🔗</span>
+      <span class="nav-text">Ledger</span>
+    </button>
+  </nav>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: ADD / EDIT PRODUCT (Inventory)                             -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="productModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="productModalTitle">Add Product (Inventory)</h3>
+        <button class="btn-close-modal" onclick="document.getElementById('productModal').classList.remove('active')">&times;</button>
+      </div>
+      <form id="productForm">
+        <div class="modal-body">
+          <input type="hidden" id="formProductId">
+
+          <div class="form-group">
+            <label for="formBarcode">Barcode ID / SKU *</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="formBarcode" class="form-control" placeholder="Scan or enter barcode" required>
+              <button type="button" class="btn-primary" id="btnScanBarcodeForForm" style="white-space: nowrap; font-size: 0.75rem; background: #06b6d4; color: #0f172a;">📷 Scan</button>
+              <button type="button" class="btn-primary" id="btnGenerateBarcode" style="white-space: nowrap; font-size: 0.75rem;">Generate</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="formName">Product Name *</label>
+            <input type="text" id="formName" class="form-control" placeholder="e.g. boAt Rockerz 255 Pro+" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="formCategory">Category *</label>
+              <select id="formCategory" class="form-control" required>
+                <option value="Accessories">Accessories</option>
+                <option value="Books">Books</option>
+                <option value="Pens">Pens</option>
+                <option value="Gadgets">Gadgets</option>
+                <option value="Smartwatches">Smartwatches</option>
+                <option value="Phones">Phones</option>
+                <option value="Earphones">Earphones</option>
+                <option value="Earpods">Earpods</option>
+                <option value="Earbuds">Earbuds</option>
+                <option value="Neckbands">Neckbands</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="formPrice">Selling Price (₹) *</label>
+              <input type="number" step="0.01" id="formPrice" class="form-control" placeholder="1499.00" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="formCostPrice">Cost Price (₹)</label>
+              <input type="number" step="0.01" id="formCostPrice" class="form-control" placeholder="900.00">
+            </div>
+
+            <div class="form-group">
+              <label for="formStockCount">Stock Quantity *</label>
+              <input type="number" id="formStockCount" class="form-control" placeholder="20" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="formThreshold">Low Stock Alert Threshold</label>
+            <input type="number" id="formThreshold" class="form-control" value="5">
+          </div>
+
+          <div class="form-group">
+            <label for="formDescription">Description</label>
+            <textarea id="formDescription" class="form-control" rows="2" placeholder="Specifications, model number, warranty..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-icon" style="width: auto; padding: 0.5rem 1rem;" onclick="document.getElementById('productModal').classList.remove('active')">Cancel</button>
+          <button type="submit" class="btn-primary">Save to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: CAMERA SCANNER (For Adding / Editing Products by Barcode) -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="cameraScannerModal" style="z-index: 1500;">
+    <div class="modal-box" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="cameraScannerModalTitle">📷 Scan Product Barcode</h3>
+        <button class="btn-close-modal" onclick="window.InfinatortScanner.closeModalScanner()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1rem;">
+        <div class="scanner-modal-viewport">
+          <div id="modalScannerReader"></div>
+          <div class="scan-overlay">
+            <div class="scan-box">
+              <div class="scan-laser"></div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align: center; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.5rem;" id="modalScannerStatus">
+          Aim camera at product barcode
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-icon" style="width: auto; padding: 0.5rem 1rem;" onclick="window.InfinatortScanner.closeModalScanner()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: PRINTABLE RECEIPT & WEBHOOK CONFIRMATION                   -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="receiptModal">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>Invoice Generated</h3>
+        <button class="btn-close-modal" onclick="document.getElementById('receiptModal').classList.remove('active')">&times;</button>
+      </div>
+      <div class="modal-body" id="receiptModalContent"></div>
+      <div class="modal-footer" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" class="btn-icon" id="btnPrintReceiptBtn" style="flex: 1; min-width: 120px; padding: 0.6rem 0.8rem; background: linear-gradient(135deg, #0284c7, #2563eb); color: white; border: none; justify-content: center; font-weight: 700;">
+          🖨️ Print / PDF
+        </button>
+        <button type="button" class="btn-icon" id="btnShareReceiptBtn" style="flex: 1; min-width: 100px; padding: 0.6rem 0.8rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; justify-content: center; font-weight: 700;">
+          📱 Share
+        </button>
+        <button type="button" class="btn-primary" style="flex: 1; min-width: 70px; justify-content: center;" onclick="document.getElementById('receiptModal').classList.remove('active')">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================= -->
+  <!-- MODAL: SUNSHINE SAVED CUSTOMERS DIRECTORY                         -->
+  <!-- ================================================================= -->
+  <div class="modal-backdrop" id="customerDirectoryModal">
+    <div class="modal-box" style="max-width: 480px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.25rem;">👥</span>
+          <div>
+            <h3 style="margin: 0; font-size: 1rem;">Sunshine Customer Directory</h3>
+            <span style="font-size: 0.7rem; color: #10b981;">Synced with Supabase regular_clients</span>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="document.getElementById('customerDirectoryModal').classList.remove('active')">&times;</button>
+      </div>
+      <div style="padding: 0.65rem 0.9rem; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.15);">
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="directorySearchInput" class="form-control" placeholder="🔍 Search Name or Mobile number..." autocomplete="off">
+          <button type="button" id="btnRefreshCustomerDirectory" class="btn-icon" style="flex-shrink: 0; width: 38px; height: 38px;" title="Refresh from Supabase">🔄</button>
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.4rem; display: flex; justify-content: space-between; align-items: center;">
+          <span id="directoryCountLabel">Showing customers</span>
+          <span style="color: #06b6d4;">Tap customer to select</span>
+        </div>
+      </div>
+      <div class="modal-body" id="directoryListContainer" style="overflow-y: auto; flex: 1; padding: 0.5rem; max-height: 400px;">
+        <!-- Dynamic list of customers -->
+      </div>
+      <div class="modal-footer" style="padding: 0.5rem 0.9rem; justify-content: space-between;">
+        <button type="button" id="btnResetToWalkIn" style="font-size: 0.78rem; background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); border-radius: 6px; padding: 0.4rem 0.75rem; cursor: pointer;">
+          Reset to Walk-in
+        </button>
+        <button type="button" class="btn-primary" style="padding: 0.4rem 1rem;" onclick="document.getElementById('customerDirectoryModal').classList.remove('active')">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dynamic Toast Alerts -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Scripts: Library, Scanner, POS & Inventory -->
+  <script src="js/html5-qrcode.min.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/pos.js"></script>
+  <script src="js/inventory.js"></script>
+
+  <!-- Navigation & Responsive UI Logic -->
+  <script>
+    // Tab switching for bottom nav bar
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetView = document.getElementById(btn.dataset.target);
+        if (targetView) targetView.classList.add('active');
+
+        // Scroll to top on tab switch
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (btn.dataset.target === 'viewLedger') {
+          loadLedgerLogs();
+        }
+      });
+    });
+
+    // Scroll to cart when floating cart bar or header cart button is tapped
+    const btnScrollToCart = document.getElementById('btnScrollToCart');
+    const headerCartBtn = document.getElementById('headerCartBtn');
+    const cartSectionAnchor = document.getElementById('cartSectionAnchor');
+
+    function scrollToCart() {
+      // Ensure we are on Infinatort tab
+      document.querySelector('[data-target="viewInfinatort"]').click();
+      if (cartSectionAnchor) {
+        cartSectionAnchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    if (btnScrollToCart) btnScrollToCart.addEventListener('click', scrollToCart);
+    if (headerCartBtn) headerCartBtn.addEventListener('click', scrollToCart);
+
+    // Ledger Settings
+    const inputLedgerUrl = document.getElementById('inputLedgerUrl');
+    const btnSaveLedgerSettings = document.getElementById('btnSaveLedgerSettings');
+    const btnTestWebhook = document.getElementById('btnTestWebhook');
+    const btnRefreshLedgerLogs = document.getElementById('btnRefreshLedgerLogs');
+    const mockLedgerLogsDisplay = document.getElementById('mockLedgerLogsDisplay');
+
+    if (inputLedgerUrl) {
+      inputLedgerUrl.value = window.InfinatortPOS.ledgerWebhookUrl;
+    }
+
+    if (btnSaveLedgerSettings) {
+      btnSaveLedgerSettings.addEventListener('click', async () => {
+        const url = inputLedgerUrl.value.trim();
+        if (!url) return alert('Please enter a valid URL');
+        window.InfinatortPOS.ledgerWebhookUrl = url;
+        localStorage.setItem('ledger_webhook_url', url);
+
+        try {
+          await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ledger_webhook_url: url })
+          });
+          alert('Ledger webhook URL updated successfully!');
+        } catch (e) {
+          alert('Saved locally in browser.');
+        }
+      });
+    }
+
+    if (btnTestWebhook) {
+      btnTestWebhook.addEventListener('click', async () => {
+        const samplePayload = {
+          timestamp: new Date().toISOString(),
+          invoice_id: "TEST-INF-" + Math.floor(1000 + Math.random() * 9000),
+          total_amount: 1450.00,
+          subtotal: 1450.00,
+          discount: 0,
+          tax: 0,
+          payment_method: "UPI",
+          items_sold: [
+            { id: 1, name: "Atomic Habits - James Clear", qty: 1, price: 450, category: "Books" },
+            { id: 2, name: "boAt Airdopes 141 TWS Earbuds", qty: 1, price: 1000, category: "Earbuds" }
+          ],
+          customer: { name: "Test Clerk", phone: "9876543210" }
+        };
+
+        const res = await window.InfinatortPOS.sendToLedger(samplePayload);
+        alert(res.message);
+        loadLedgerLogs();
+      });
+    }
+
+    if (btnRefreshLedgerLogs) {
+      btnRefreshLedgerLogs.addEventListener('click', loadLedgerLogs);
+    }
+
+    async function loadLedgerLogs() {
+      const display = document.getElementById('mockLedgerLogsDisplay');
+      const totalEl = document.getElementById('sunshineTodayTotal');
+      const countEl = document.getElementById('sunshineTodayCount');
+      const dateEl = document.getElementById('sunshineLedgerDate');
+      const badgeEl = document.getElementById('sunshineStatusBadge');
+
+      try {
+        const res = await fetch('/api/ledger/sunshine-status');
+        if (res.ok) {
+          const data = await res.json();
+          if (totalEl) totalEl.textContent = `₹ ${Number(data.section_3a_today_total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+          if (countEl) countEl.textContent = `${data.section_3a_items_count || 0} item${data.section_3a_items_count !== 1 ? 's' : ''}`;
+          if (dateEl) dateEl.textContent = `Date: ${data.today_date_ist || 'Today'}`;
+          if (badgeEl) {
+            badgeEl.textContent = `● Connected (${data.accountant || 'Cloud'})`;
+            badgeEl.style.color = '#10b981';
+          }
+          if (display) {
+            display.textContent = JSON.stringify({
+              sunshine_ledger_sync: "ONLINE & ACTIVE",
+              target_tables: ["daily_ledgers (Section 3A)", "gadget_sales_entries"],
+              today_date: data.today_date_ist,
+              section_3a_total_amount: data.section_3a_today_total,
+              section_3a_items_logged: data.section_3a_items_count,
+              recent_entries: data.today_entries
+            }, null, 2);
+          }
+        }
+      } catch (e) {
+        if (display) display.textContent = 'Could not load Sunshine Ledger status: ' + e.message;
+        if (badgeEl) {
+          badgeEl.textContent = '⚠ Connection Note';
+          badgeEl.style.color = '#f59e0b';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
