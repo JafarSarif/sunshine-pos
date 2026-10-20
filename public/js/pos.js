@@ -139,13 +139,41 @@ class InfinatortPOS {
 
   renderCategoryChips() {
     if (!this.categoryChips) return;
-    const categories = ['All', 'Accessories', 'Books', 'Pens', 'Gadgets', 'Smartwatches', 'Phones', 'Earphones', 'Earpods', 'Earbuds', 'Neckbands'];
+    const allCats = window.SunshineCategories ? window.SunshineCategories.getAll() : [
+      'Accessories', 'Books', 'Pens', 'Gadgets', 'Smartwatches', 'Phones', 'Earphones', 'Earpods', 'Earbuds', 'Neckbands'
+    ];
 
-    this.categoryChips.innerHTML = categories.map(cat => `
-      <button class="chip ${cat === this.selectedCategory ? 'active' : ''}" data-cat="${cat}">
-        ${cat}
-      </button>
-    `).join('');
+    const categories = ['All', ...allCats];
+
+    this.categoryChips.innerHTML = categories.map(cat => {
+      if (cat === 'All') {
+        const isActive = this.selectedCategory === 'All';
+        return `
+          <button class="chip ${isActive ? 'active' : ''}" data-cat="All"
+                  style="--chip-color: #06b6d4; --chip-bg: rgba(6, 182, 212, 0.22); --chip-border: #06b6d4; --chip-glow: rgba(6, 182, 212, 0.4);">
+            <span class="chip-icon">✨</span>
+            <span class="chip-label">All</span>
+          </button>
+        `;
+      }
+
+      const meta = window.SunshineCategories ? window.SunshineCategories.get(cat) : {
+        icon: '📦',
+        color: '#38bdf8',
+        bg: 'rgba(56, 189, 248, 0.16)',
+        border: 'rgba(56, 189, 248, 0.4)',
+        glow: 'rgba(56, 189, 248, 0.25)'
+      };
+      const isActive = this.selectedCategory === cat;
+
+      return `
+        <button class="chip ${isActive ? 'active' : ''}" data-cat="${cat}"
+                style="--chip-color: ${meta.color}; --chip-bg: ${meta.bg}; --chip-border: ${meta.border}; --chip-glow: ${meta.glow};">
+          <span class="chip-icon">${meta.icon}</span>
+          <span class="chip-label">${cat}</span>
+        </button>
+      `;
+    }).join('');
 
     this.categoryChips.querySelectorAll('.chip').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -177,14 +205,24 @@ class InfinatortPOS {
 
     if (filtered.length === 0) {
       this.productsGrid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--text-muted);">
-          No products found matching your search.
+        <div style="grid-column: 1 / -1; text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔍</div>
+          <strong style="color: #ffffff; display: block; margin-bottom: 0.25rem;">No products found</strong>
+          <span style="font-size: 0.78rem;">Try selecting a different category or clearing your search.</span>
         </div>
       `;
       return;
     }
 
     this.productsGrid.innerHTML = filtered.map(p => {
+      const catMeta = window.SunshineCategories ? window.SunshineCategories.get(p.category) : {
+        icon: '📦',
+        color: '#38bdf8',
+        bg: 'rgba(56, 189, 248, 0.16)',
+        border: 'rgba(56, 189, 248, 0.4)',
+        glow: 'rgba(56, 189, 248, 0.25)'
+      };
+
       let stockTagClass = '';
       let stockText = `${p.stock_count} in stock`;
       if (p.stock_count <= 0) {
@@ -196,9 +234,14 @@ class InfinatortPOS {
       }
 
       return `
-        <div class="product-item" data-id="${p.id}" data-barcode="${p.barcode}">
+        <div class="product-item" data-id="${p.id}" data-barcode="${p.barcode}"
+             style="--item-cat-color: ${catMeta.color}; --item-cat-glow: ${catMeta.glow}; border-left: 3.5px solid ${catMeta.color} !important;">
           <div>
-            <div class="product-category-tag">${p.category}</div>
+            <div class="product-category-tag" 
+                 style="background: ${catMeta.bg}; color: ${catMeta.color}; border: 1px solid ${catMeta.border};">
+              <span class="cat-tag-icon">${catMeta.icon}</span>
+              <span>${p.category}</span>
+            </div>
             <div class="product-name" title="${p.name}">${p.name}</div>
             <div class="product-barcode">#${p.barcode}</div>
           </div>

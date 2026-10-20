@@ -172,59 +172,130 @@
     </section>
 
     <!-- ================================================================= -->
-    <!-- VIEW 2: ANTIGRAVITY (Comprehensive Inventory Management) -->
+    <!-- VIEW 2: INVENTORY (Comprehensive Management & Dashboard)           -->
     <!-- ================================================================= -->
     <section id="viewAntigravity" class="view-section">
       <!-- Cloud Synchronization Status Bar -->
-      <div class="cloud-sync-bar" style="display: flex; align-items: center; justify-content: space-between; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 0.6rem 0.9rem; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.6rem;">
-          <span style="font-size: 1.25rem;">☁️</span>
+      <div class="cloud-sync-bar glass-card">
+        <div class="cloud-sync-info">
+          <div class="cloud-sync-icon-wrap">
+            <span class="cloud-icon">☁️</span>
+          </div>
           <div>
-            <div style="font-weight: 800; font-size: 0.82rem; color: #10b981; display: flex; align-items: center; gap: 0.4rem;">
+            <div class="cloud-sync-badge-row">
               <span id="cloudSyncStatusBadge">Cloud Synced with Supabase</span>
-              <span style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+              <span class="pulse-indicator"></span>
             </div>
-            <div style="font-size: 0.68rem; color: var(--text-secondary);" id="cloudSyncDetailText">Auto-syncs across all phones, tablets &amp; PCs</div>
+            <div class="cloud-sync-sub" id="cloudSyncDetailText">Auto-syncs across all phones, tablets &amp; PCs</div>
           </div>
         </div>
-        <button id="btnManualCloudSync" type="button" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.45); color: #10b981; border-radius: 8px; padding: 0.35rem 0.75rem; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
+        <button id="btnManualCloudSync" type="button" class="btn-glass-sync">
           <span id="syncIconSpin">🔄</span> <span id="syncBtnText">Sync Cloud Now</span>
         </button>
       </div>
 
-      <!-- Quick Dashboard Metric Counters (2x2 on mobile) -->
+      <!-- Quick Dashboard Metric Counters (Glass Cards) -->
+      <div class="inventory-dashboard-header">
+        <div class="section-title-wrap">
+          <h2 class="dashboard-main-title">📦 Inventory Intelligence</h2>
+          <span class="dashboard-badge">Live Dashboard</span>
+        </div>
+      </div>
+
       <div class="inventory-stats-grid">
-        <div class="stat-card">
-          <span class="stat-label">Total SKUs</span>
-          <span class="stat-value" id="statTotalProducts">0</span>
+        <div class="stat-card glass-card" style="--card-accent: #3b82f6;">
+          <div class="stat-icon-wrap" style="background: rgba(59, 130, 246, 0.16); color: #3b82f6;">📦</div>
+          <div class="stat-content">
+            <span class="stat-label">Total SKUs</span>
+            <span class="stat-value" id="statTotalProducts">0</span>
+            <span class="stat-sub">Active Products</span>
+          </div>
         </div>
-        <div class="stat-card alert">
-          <span class="stat-label">Low Stock Alerts</span>
-          <span class="stat-value" id="statLowStock">0</span>
+
+        <div class="stat-card glass-card" style="--card-accent: #10b981;">
+          <div class="stat-icon-wrap" style="background: rgba(16, 185, 129, 0.16); color: #10b981;">📊</div>
+          <div class="stat-content">
+            <span class="stat-label">Stock Units</span>
+            <span class="stat-value" id="statTotalStock">0</span>
+            <span class="stat-sub">Units in Store</span>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Stock Units</span>
-          <span class="stat-value" id="statTotalStock">0</span>
+
+        <div class="stat-card glass-card" style="--card-accent: #06b6d4;">
+          <div class="stat-icon-wrap" style="background: rgba(6, 182, 212, 0.16); color: #06b6d4;">💰</div>
+          <div class="stat-content">
+            <span class="stat-label">Inventory Value</span>
+            <span class="stat-value" id="statTotalValue">₹0</span>
+            <span class="stat-sub">Retail Valuation</span>
+          </div>
         </div>
-        <div class="stat-card">
-          <span class="stat-label">Inventory Value</span>
-          <span class="stat-value" id="statTotalValue">₹0</span>
+
+        <div class="stat-card glass-card alert" style="--card-accent: #f59e0b;">
+          <div class="stat-icon-wrap" style="background: rgba(245, 158, 11, 0.16); color: #f59e0b;">⚠️</div>
+          <div class="stat-content">
+            <span class="stat-label">Low Stock Alerts</span>
+            <span class="stat-value" id="statLowStock">0</span>
+            <span class="stat-sub">Needs Attention</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stock Health Monitor Bar -->
+      <div class="stock-health-card glass-card">
+        <div class="stock-health-header">
+          <span class="stock-health-title">Stock Health Monitor</span>
+          <div class="stock-health-legend">
+            <span class="legend-item" id="legendInStock"><span class="legend-dot in-stock"></span> In Stock: <strong id="healthInStockCount">0</strong></span>
+            <span class="legend-item" id="legendLowStock"><span class="legend-dot low-stock"></span> Low: <strong id="healthLowStockCount">0</strong></span>
+            <span class="legend-item" id="legendOutStock"><span class="legend-dot out-stock"></span> Out: <strong id="healthOutStockCount">0</strong></span>
+          </div>
+        </div>
+        <div class="health-progress-bar">
+          <div class="health-bar-segment in-stock" id="healthBarInStock" style="width: 100%;"></div>
+          <div class="health-bar-segment low-stock" id="healthBarLowStock" style="width: 0%;"></div>
+          <div class="health-bar-segment out-stock" id="healthBarOutStock" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Dedicated Category Intelligence Grid -->
+      <div class="category-dashboard-card glass-card">
+        <div class="category-dashboard-header">
+          <div class="cat-dash-title-wrap">
+            <span class="cat-dash-title">🏷️ Category Intelligence</span>
+            <span class="cat-dash-subtitle">Click any category card to filter catalog</span>
+          </div>
+          <button id="btnResetCategoryFilter" class="btn-glass-sm" style="display: none;">Show All (10)</button>
+        </div>
+        <div class="category-cards-grid" id="categoryDashboardGrid">
+          <!-- Filled dynamically with category cards with distinct color and icon -->
         </div>
       </div>
 
       <!-- Inventory Table & Filters Container -->
-      <div class="inventory-container">
+      <div class="inventory-container glass-card">
         <div class="inventory-toolbar">
           <div class="toolbar-search-row">
-            <input type="text" id="inventorySearchInput" class="form-control" placeholder="Search by name, barcode, or category...">
-            <select id="inventoryCategoryFilter" class="form-control" style="width: 140px;">
+            <div class="input-group glass-input-group">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="inventorySearchInput" class="form-control glass-input" placeholder="Search by name, barcode, or category...">
+              <button id="btnInventorySearchClear" class="input-clear-btn" style="display: none;">✕</button>
+            </div>
+            <select id="inventoryCategoryFilter" class="form-control glass-select" style="width: 155px;">
               <option value="">All Categories</option>
             </select>
           </div>
 
+          <!-- Stock Filter Chips -->
+          <div class="stock-filter-chips" id="inventoryStockFilterChips">
+            <button class="filter-chip active" data-filter="all">All Items</button>
+            <button class="filter-chip" data-filter="healthy">🟢 Healthy</button>
+            <button class="filter-chip" data-filter="low">⚠️ Low Stock</button>
+            <button class="filter-chip" data-filter="out">❌ Out of Stock</button>
+          </div>
+
           <div class="inventory-actions">
-            <button class="btn-primary" id="btnScanToAddProduct" style="background: linear-gradient(135deg, #06b6d4, #3b82f6); flex: 1;">📷 Scan to Add/Edit</button>
-            <button class="btn-primary" id="btnAddProduct" style="flex: 1;">➕ Add Product</button>
+            <button class="btn-primary btn-scan-action" id="btnScanToAddProduct">📷 Scan to Add/Edit</button>
+            <button class="btn-primary btn-add-action" id="btnAddProduct">➕ Add Product</button>
           </div>
         </div>
 
@@ -524,6 +595,7 @@
 
   <!-- Scripts: Library, Scanner, POS & Inventory -->
   <script src="js/html5-qrcode.min.js"></script>
+  <script src="js/categories.js"></script>
   <script src="js/scanner.js"></script>
   <script src="js/pos.js"></script>
   <script src="js/inventory.js"></script>
