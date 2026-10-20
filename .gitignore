@@ -27,3 +27,5 @@ AntigravityPOS/app/build/
 AntigravityPOS/local.properties
 AntigravityPOS/.idea/
 *.iml
+.vercel
+.env*
