@@ -263,10 +263,13 @@ class InfinatortScanner {
     // Audio beep
     this.playBeep('success');
 
-    // Notify POS controller
+    // Notify POS controller to add product to bill
     if (window.InfinatortPOS && typeof window.InfinatortPOS.handleScannedBarcode === 'function') {
       window.InfinatortPOS.handleScannedBarcode(decodedText);
     }
+
+    // Auto-close camera immediately after product is scanned to avoid repeated scans
+    this.stop();
   }
 
   updateStatus(type, message) {

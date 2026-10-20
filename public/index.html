@@ -447,7 +447,12 @@
 
           <div class="form-row">
             <div class="form-group">
-              <label for="formCategory">Category *</label>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <label for="formCategory" style="margin-bottom: 0;">Category *</label>
+                <button type="button" id="btnToggleNewCategory" style="font-size: 0.72rem; color: #06b6d4; background: transparent; border: none; cursor: pointer; font-weight: 700; padding: 0;">
+                  ➕ + New Category
+                </button>
+              </div>
               <select id="formCategory" class="form-control" required>
                 <option value="Accessories">Accessories</option>
                 <option value="Books">Books</option>
@@ -459,7 +464,20 @@
                 <option value="Earpods">Earpods</option>
                 <option value="Earbuds">Earbuds</option>
                 <option value="Neckbands">Neckbands</option>
+                <option value="__ADD_NEW__">➕ Add New Category...</option>
               </select>
+
+              <!-- Inline New Category Input (expands when requested) -->
+              <div id="newCategoryInputWrapper" style="display: none; margin-top: 0.5rem; background: rgba(26, 36, 60, 0.75); padding: 0.55rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                <div style="font-size: 0.72rem; color: #38bdf8; font-weight: 800; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.3rem;">
+                  <span>🏷️</span> Add New Category:
+                </div>
+                <div style="display: flex; gap: 0.4rem;">
+                  <input type="text" id="formNewCategoryInput" class="form-control" placeholder="e.g. Speakers, Tablets, Toys" style="padding: 0.45rem 0.65rem; font-size: 0.8rem;">
+                  <button type="button" id="btnConfirmAddCategory" class="btn-primary" style="white-space: nowrap; font-size: 0.75rem; padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #06b6d4, #3b82f6);">Add</button>
+                  <button type="button" id="btnCancelAddCategory" style="white-space: nowrap; font-size: 0.75rem; padding: 0.4rem 0.6rem; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border); color: var(--text-secondary); border-radius: 6px; cursor: pointer;">✕</button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">

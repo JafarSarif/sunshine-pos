@@ -108,6 +108,79 @@ class AntigravityInventory {
       });
     }
 
+    // Add New Custom Category event listeners
+    const btnToggleNewCat = document.getElementById('btnToggleNewCategory');
+    const newCatWrapper = document.getElementById('newCategoryInputWrapper');
+    const newCatInput = document.getElementById('formNewCategoryInput');
+    const btnConfirmNewCat = document.getElementById('btnConfirmAddCategory');
+    const btnCancelNewCat = document.getElementById('btnCancelAddCategory');
+    const formCategorySelect = document.getElementById('formCategory');
+
+    if (btnToggleNewCat && newCatWrapper) {
+      btnToggleNewCat.addEventListener('click', () => {
+        const isHidden = newCatWrapper.style.display === 'none';
+        newCatWrapper.style.display = isHidden ? 'block' : 'none';
+        if (isHidden && newCatInput) setTimeout(() => newCatInput.focus(), 150);
+      });
+    }
+
+    if (formCategorySelect && newCatWrapper) {
+      formCategorySelect.addEventListener('change', () => {
+        if (formCategorySelect.value === '__ADD_NEW__') {
+          newCatWrapper.style.display = 'block';
+          if (newCatInput) setTimeout(() => newCatInput.focus(), 150);
+        } else {
+          newCatWrapper.style.display = 'none';
+        }
+      });
+    }
+
+    if (btnConfirmNewCat && newCatInput) {
+      const confirmAddCategory = () => {
+        const name = newCatInput.value.trim();
+        if (!name || name === '__ADD_NEW__') {
+          alert('Please enter a valid category name.');
+          return;
+        }
+
+        if (window.SunshineCategories) {
+          window.SunshineCategories.addCustomCategory(name);
+        }
+
+        this.populateCategoryFilter();
+        if (formCategorySelect) formCategorySelect.value = name;
+        newCatWrapper.style.display = 'none';
+        newCatInput.value = '';
+
+        document.getElementById('formPrice')?.focus();
+
+        if (window.InfinatortPOS) {
+          window.InfinatortPOS.showToast(`Category "${name}" added!`, 'success');
+          window.InfinatortPOS.renderCategoryChips();
+          window.InfinatortPOS.renderCatalog();
+        }
+        this.renderCategoryDashboard();
+      };
+
+      btnConfirmNewCat.addEventListener('click', confirmAddCategory);
+      newCatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          confirmAddCategory();
+        }
+      });
+    }
+
+    if (btnCancelNewCat && newCatWrapper) {
+      btnCancelNewCat.addEventListener('click', () => {
+        newCatWrapper.style.display = 'none';
+        if (formCategorySelect && formCategorySelect.value === '__ADD_NEW__') {
+          const allCats = window.SunshineCategories ? window.SunshineCategories.getAll() : [];
+          formCategorySelect.value = allCats[0] || 'Accessories';
+        }
+      });
+    }
+
     // Search input typing and clear button
     if (this.searchFilter) {
       this.searchFilter.addEventListener('input', () => {
@@ -397,8 +470,8 @@ class AntigravityInventory {
       formCat.innerHTML = allCats.map(cat => {
         const meta = window.SunshineCategories ? window.SunshineCategories.get(cat) : { icon: '📦' };
         return `<option value="${cat}">${meta.icon} ${cat}</option>`;
-      }).join('');
-      if (curFormVal) formCat.value = curFormVal;
+      }).join('') + '<option value="__ADD_NEW__">➕ Add New Category...</option>';
+      if (curFormVal && curFormVal !== '__ADD_NEW__') formCat.value = curFormVal;
     }
   }
 
@@ -489,6 +562,13 @@ class AntigravityInventory {
     form.reset();
     document.getElementById('formProductId').value = '';
 
+    // Ensure category dropdown contains all custom & current categories
+    this.populateCategoryFilter();
+    const newCatWrapper = document.getElementById('newCategoryInputWrapper');
+    if (newCatWrapper) newCatWrapper.style.display = 'none';
+    const newCatInput = document.getElementById('formNewCategoryInput');
+    if (newCatInput) newCatInput.value = '';
+
     if (productId) {
       const prod = this.products.find(p => p.id === productId);
       if (prod) {
@@ -505,6 +585,9 @@ class AntigravityInventory {
       }
     } else {
       modalTitle.textContent = 'Add New Product (Inventory)';
+      const allCats = window.SunshineCategories ? window.SunshineCategories.getAll() : [];
+      const formCat = document.getElementById('formCategory');
+      if (formCat && allCats.length > 0) formCat.value = allCats[0];
     }
 
     modal.classList.add('active');
@@ -547,8 +630,8 @@ class AntigravityInventory {
     const low_stock_threshold = parseInt(document.getElementById('formThreshold').value) || 5;
     const description = document.getElementById('formDescription').value.trim();
 
-    if (!barcode || !name || !category || isNaN(price)) {
-      alert('Please fill out all required fields.');
+    if (!barcode || !name || !category || category === '__ADD_NEW__' || isNaN(price)) {
+      alert('Please fill out all required fields and select a valid category.');
       return;
     }
 

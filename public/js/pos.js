@@ -143,6 +143,12 @@ class InfinatortPOS {
       'Accessories', 'Books', 'Pens', 'Gadgets', 'Smartwatches', 'Phones', 'Earphones', 'Earpods', 'Earbuds', 'Neckbands'
     ];
 
+    if (this.products && Array.isArray(this.products)) {
+      this.products.forEach(p => {
+        if (p.category && !allCats.includes(p.category)) allCats.push(p.category);
+      });
+    }
+
     const categories = ['All', ...allCats];
 
     this.categoryChips.innerHTML = categories.map(cat => {
@@ -636,12 +642,20 @@ class InfinatortPOS {
     if (!modal || !content) return;
 
     const payload = saleInfo.ledgerPayload;
-    const itemsHtml = payload.items_sold.map(i => `
-      <tr>
-        <td>${i.name} (${i.qty})</td>
-        <td class="num-col">₹${i.total.toFixed(2)}</td>
-      </tr>
-    `).join('');
+    const itemsHtml = payload.items_sold.map(i => {
+      const discNote = (i.item_discount && i.item_discount > 0)
+        ? `<div style="font-size: 10px; color: #16a34a; margin-top: 1px;">(Orig: ₹${(i.original_price * i.qty).toFixed(2)} - Disc: ₹${i.item_discount.toFixed(2)})</div>`
+        : '';
+      return `
+        <tr>
+          <td>
+            <strong>${this.escapeHtml(i.name)}</strong> (${i.qty})
+            ${discNote}
+          </td>
+          <td class="num-col">₹${i.total.toFixed(2)}</td>
+        </tr>
+      `;
+    }).join('');
 
     const webhookBadgeClass = ledgerStatus.success ? 'success' : 'error';
     const webhookIcon = ledgerStatus.success ? '✓' : '⚠';
@@ -649,6 +663,17 @@ class InfinatortPOS {
     const customerMeta = (payload.customer && payload.customer.name && payload.customer.name !== 'Walk-in Customer')
       ? `<div class="receipt-meta">Customer: <strong>${this.escapeHtml(payload.customer.name)}</strong>${payload.customer.phone ? ` (${this.escapeHtml(payload.customer.phone)})` : ''}</div>`
       : '';
+
+    const discountBreakdownHtml = (payload.discount && payload.discount > 0) ? `
+      <div class="receipt-subtotal-row" style="display:flex; justify-content:space-between; font-size:12px; color:#555; padding: 2px 0;">
+        <span>Subtotal</span>
+        <span>₹${(payload.subtotal || (payload.total_amount + payload.discount)).toFixed(2)}</span>
+      </div>
+      <div class="receipt-discount-row" style="display:flex; justify-content:space-between; font-size:12px; color:#16a34a; font-weight:700; padding: 2px 0;">
+        <span>Discount</span>
+        <span>-₹${payload.discount.toFixed(2)}</span>
+      </div>
+    ` : '';
 
     content.innerHTML = `
       <div class="receipt-paper" id="printableReceipt">
@@ -672,6 +697,8 @@ class InfinatortPOS {
             ${itemsHtml}
           </tbody>
         </table>
+
+        ${discountBreakdownHtml}
 
         <div class="receipt-total-row">
           <span>GRAND TOTAL</span>
@@ -852,6 +879,11 @@ class InfinatortPOS {
       ? `Customer: ${payload.customer.name}${payload.customer.phone ? ` (${payload.customer.phone})` : ''}\n`
       : '';
 
+    const subtotalVal = payload.subtotal || (Number(payload.total_amount) + Number(payload.discount || 0));
+    const discountLine = (payload.discount && payload.discount > 0)
+      ? `Subtotal: ₹${Number(subtotalVal).toFixed(2)}\nDiscount: -₹${Number(payload.discount).toFixed(2)}\n`
+      : '';
+
     const shareText = 
 `🧾 *SUNSHINE STORE RECEIPT*
 Invoice: #${payload.invoice_id}
@@ -860,7 +892,7 @@ ${customerLine}Payment Method: ${payload.payment_method}
 ------------------------------------
 ${itemsText}
 ------------------------------------
-*GRAND TOTAL: ₹${Number(payload.total_amount).toFixed(2)}*
+${discountLine}*GRAND TOTAL: ₹${Number(payload.total_amount).toFixed(2)}*
 ------------------------------------
 Thank you for shopping at Sunshine Store!`;
 

@@ -308,6 +308,35 @@ app.post('/api/sales', async (req, res) => {
     const total_amount = Number((finalSubtotal - finalDiscount + finalTax).toFixed(2));
     const nowIso = new Date().toISOString();
 
+    // Distribute discount proportionally across items so that each item's selling price in the ledger reflects the discount
+    let remainingDiscount = finalDiscount;
+    const discountedItems = verifiedItems.map((vItem, index) => {
+      let itemDiscount = 0;
+      if (finalDiscount > 0 && finalSubtotal > 0) {
+        if (index === verifiedItems.length - 1) {
+          // Last item gets any leftover remainder to avoid 1-paisa rounding discrepancies
+          itemDiscount = Number(remainingDiscount.toFixed(2));
+        } else {
+          itemDiscount = Number(((vItem.total / finalSubtotal) * finalDiscount).toFixed(2));
+          remainingDiscount -= itemDiscount;
+        }
+      }
+
+      // Ensure discount doesn't exceed item total
+      itemDiscount = Math.min(vItem.total, Math.max(0, itemDiscount));
+      const discountedTotal = Math.max(0, Number((vItem.total - itemDiscount).toFixed(2)));
+      const discountedUnitPrice = vItem.quantity > 0 ? Number((discountedTotal / vItem.quantity).toFixed(2)) : 0;
+
+      return {
+        ...vItem,
+        original_price: vItem.price,
+        original_total: vItem.total,
+        item_discount: itemDiscount,
+        price: discountedUnitPrice, // discounted selling price (e.g. 1900 -> 1400)
+        total: discountedTotal       // discounted total amount (e.g. 1900 -> 1400)
+      };
+    });
+
     // 2. Insert into sales
     const insertSale = db.prepare(`
       INSERT INTO sales (invoice_id, timestamp, subtotal, discount, tax, total_amount, payment_method, customer_name, customer_phone, ledger_synced)
@@ -328,7 +357,7 @@ app.post('/api/sales', async (req, res) => {
 
     const saleId = saleResult.lastInsertRowid;
 
-    // 3. Insert sale items & deduct stock
+    // 3. Insert sale items & deduct stock (recording discounted price & total)
     const insertItem = db.prepare(`
       INSERT INTO sale_items (sale_id, product_id, barcode, name, category, price, cost_price, quantity, total)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -338,23 +367,23 @@ app.post('/api/sales', async (req, res) => {
       UPDATE products SET stock_count = stock_count - ? WHERE id = ?
     `);
 
-    for (const vItem of verifiedItems) {
+    for (const dItem of discountedItems) {
       insertItem.run(
         saleId,
-        vItem.product_id,
-        vItem.barcode,
-        vItem.name,
-        vItem.category,
-        vItem.price,
-        vItem.cost_price,
-        vItem.quantity,
-        vItem.total
+        dItem.product_id,
+        dItem.barcode,
+        dItem.name,
+        dItem.category,
+        dItem.price, // discounted selling price
+        dItem.cost_price,
+        dItem.quantity,
+        dItem.total  // discounted total
       );
 
-      updateStock.run(vItem.quantity, vItem.product_id);
+      updateStock.run(dItem.quantity, dItem.product_id);
     }
 
-    // Build the exact payload required for external ledger integration
+    // Build the exact payload required for external ledger integration (carrying discounted prices)
     const ledgerPayload = {
       timestamp: nowIso,
       invoice_id: invoice_id,
@@ -363,15 +392,17 @@ app.post('/api/sales', async (req, res) => {
       discount: finalDiscount,
       tax: finalTax,
       payment_method: payment_method,
-      items_sold: verifiedItems.map(it => ({
+      items_sold: discountedItems.map(it => ({
         id: it.product_id,
         barcode: it.barcode,
         name: it.name,
         category: it.category,
         qty: it.quantity,
-        price: it.price,
+        price: it.price,             // discounted selling price (e.g. 1400)
+        original_price: it.original_price, // pre-discount price (e.g. 1900)
+        discount: it.item_discount,  // item discount (e.g. 500)
         cost_price: it.cost_price || 0,
-        total: it.total
+        total: it.total              // discounted total amount (e.g. 1400)
       })),
       customer: {
         name: customer_name,

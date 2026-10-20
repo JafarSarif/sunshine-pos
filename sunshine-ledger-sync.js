@@ -207,6 +207,36 @@ async function syncSaleToSunshineLedger(payload) {
   }
 
   // -------------------------------------------------------------------------
+  // STEP 0: ENSURE DISCOUNTED SELLING PRICES ARE APPLIED TO ITEMS
+  // If discount was given, ensure item.price & item.total reflect the discounted price
+  // e.g. Orig 1900 with 500 discount -> records 1400 in the ledger
+  // -------------------------------------------------------------------------
+  const discountTotal = Number(payload.discount) || 0;
+  const subtotalAmount = Number(payload.subtotal) || payload.items_sold.reduce((sum, it) => sum + (Number(it.price) * (Number(it.qty) || 1)), 0);
+  const itemsSum = payload.items_sold.reduce((sum, it) => sum + (Number(it.total) || (Number(it.price) * (Number(it.qty) || 1))), 0);
+
+  if (discountTotal > 0 && subtotalAmount > 0 && Math.abs(itemsSum - Number(payload.total_amount)) > 0.05) {
+    let remDisc = discountTotal;
+    payload.items_sold.forEach((it, idx) => {
+      const origTotal = Number(it.total) || (Number(it.price) * (Number(it.qty) || 1));
+      let itDisc = 0;
+      if (idx === payload.items_sold.length - 1) {
+        itDisc = Number(remDisc.toFixed(2));
+      } else {
+        itDisc = Number(((origTotal / subtotalAmount) * discountTotal).toFixed(2));
+        remDisc -= itDisc;
+      }
+      itDisc = Math.min(origTotal, Math.max(0, itDisc));
+      const discTotal = Math.max(0, Number((origTotal - itDisc).toFixed(2)));
+      const qty = Number(it.qty) || 1;
+      it.original_price = it.price;
+      it.discount = itDisc;
+      it.total = discTotal;
+      it.price = Number((discTotal / qty).toFixed(2));
+    });
+  }
+
+  // -------------------------------------------------------------------------
   // STEP 1: PREPARE AND INSERT ROWS INTO gadget_sales_entries TABLE
   // -------------------------------------------------------------------------
   const createdLogItems = [];
@@ -222,6 +252,7 @@ async function syncSaleToSunshineLedger(payload) {
     const unitProfit = sellPrice - buyPrice;
     const productType = mapProductCategoryToSunshineType(item.category, item.name);
     const entryId = `gsl_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`;
+    const discountNote = (item.discount && item.discount > 0) ? ` [Disc: -₹${item.discount}, Orig: ₹${item.original_price || (sellPrice + item.discount)}]` : '';
 
     const logEntry = {
       id: entryId,
@@ -241,7 +272,7 @@ async function syncSaleToSunshineLedger(payload) {
       customerName: customerName,
       customerPhone: customerPhone || '',
       paymentMode: paymentMethod,
-      notes: `Infinatort POS Sale [Invoice #${invoiceNo}]`,
+      notes: `Infinatort POS Sale [Invoice #${invoiceNo}]${discountNote}`,
       staff: 'Infinatort POS',
       invoiceNo: invoiceNo
     };
@@ -265,7 +296,7 @@ async function syncSaleToSunshineLedger(payload) {
       total_sell_amount: totalSell,
       total_profit: profit,
       payment_mode: paymentMethod,
-      notes: `Infinatort POS Sale [Invoice #${invoiceNo}]`,
+      notes: `Infinatort POS Sale [Invoice #${invoiceNo}]${discountNote}`,
       recorded_by: 'Infinatort POS'
     });
   });
