@@ -86,6 +86,7 @@ class MainActivity : ComponentActivity() {
 
         webView = WebView(this).apply {
             setBackgroundColor(android.graphics.Color.parseColor("#0f172a"))
+            clearCache(true)
             settings.apply {
                 javaScriptEnabled = true
                 domStorageEnabled = true
@@ -93,7 +94,7 @@ class MainActivity : ComponentActivity() {
                 allowFileAccess = true
                 allowContentAccess = true
                 mediaPlaybackRequiresUserGesture = false
-                cacheMode = WebSettings.LOAD_DEFAULT
+                cacheMode = WebSettings.LOAD_NO_CACHE
                 loadWithOverviewMode = true
                 useWideViewPort = true
             }
