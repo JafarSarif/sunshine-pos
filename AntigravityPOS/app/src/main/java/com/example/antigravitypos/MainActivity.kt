@@ -26,7 +26,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var activePrintWebView: WebView? = null
     private val CAMERA_PERMISSION_REQUEST_CODE = 1001
-    private val APP_URL = "https://sunshine-inventry-management-system.vercel.app/"
+    private val LOCAL_DEV_URL = "http://localhost:3000/"
+    private val CLOUD_URL = "https://sunshine-inventry-management-system.vercel.app/"
+    private var activeBaseUrl: String = CLOUD_URL
 
     inner class AndroidPrintBridge {
         @JavascriptInterface
@@ -50,7 +52,7 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
-                        loadDataWithBaseURL(APP_URL, htmlContent, "text/html", "UTF-8", null)
+                        loadDataWithBaseURL(activeBaseUrl, htmlContent, "text/html", "UTF-8", null)
                     }
                 } catch (e: Exception) {
                     Toast.makeText(this@MainActivity, "Print error: ${e.message}", Toast.LENGTH_LONG).show()
@@ -151,8 +153,27 @@ class MainActivity : ComponentActivity() {
 
         setContentView(rootLayout)
 
-        // Load the live Sunshine POS & Inventory cloud system
-        webView.loadUrl(APP_URL)
+        // Load with smart dual connectivity: check local dev server (port 3000) first; fallback to Vercel cloud
+        Thread {
+            var urlToLoad = CLOUD_URL
+            try {
+                val connection = java.net.URL(LOCAL_DEV_URL).openConnection() as java.net.HttpURLConnection
+                connection.connectTimeout = 500
+                connection.readTimeout = 500
+                connection.requestMethod = "HEAD"
+                val responseCode = connection.responseCode
+                if (responseCode in 200..399) {
+                    urlToLoad = LOCAL_DEV_URL
+                }
+            } catch (e: Exception) {
+                urlToLoad = CLOUD_URL
+            }
+
+            activeBaseUrl = urlToLoad
+            runOnUiThread {
+                webView.loadUrl(urlToLoad)
+            }
+        }.start()
     }
 
     private fun checkAndRequestCameraPermission() {

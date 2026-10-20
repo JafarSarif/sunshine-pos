@@ -86,9 +86,13 @@ const SUNSHINE_CATEGORIES = {
   }
 };
 
-window.SunshineCategories = {
+const SunshineCategoriesObj = {
   list: Object.keys(SUNSHINE_CATEGORIES),
   meta: SUNSHINE_CATEGORIES,
+
+  getAll() {
+    return Object.keys(SUNSHINE_CATEGORIES);
+  },
   
   get(categoryName) {
     if (!categoryName) return {
@@ -114,3 +118,10 @@ window.SunshineCategories = {
     return `<span class="badge-cat ${customClass}" style="--cat-color: ${item.color}; --cat-bg: ${item.bg}; --cat-border: ${item.border}; --cat-glow: ${item.glow}; color: ${item.color}; background: ${item.bg}; border: 1px solid ${item.border}; box-shadow: 0 0 10px ${item.glow};"><span class="badge-cat-icon">${item.icon}</span> ${item.name}</span>`;
   }
 };
+
+if (typeof window !== 'undefined') {
+  window.SunshineCategories = SunshineCategoriesObj;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = SunshineCategoriesObj;
+}
