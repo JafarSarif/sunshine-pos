@@ -277,10 +277,12 @@ app.post('/api/sales', async (req, res) => {
     const verifiedItems = [];
 
     for (const item of items) {
-      const product = db.prepare('SELECT * FROM products WHERE barcode = ? OR id = ?').get(item.barcode, item.id || 0);
+      const prodId = item.id || item.product_id || 0;
+      const prodBarcode = item.barcode || '';
+      const product = db.prepare("SELECT * FROM products WHERE (barcode = ? AND barcode != '') OR id = ?").get(prodBarcode, prodId);
 
       if (!product) {
-        throw new Error(`Product not found: ${item.name || item.barcode}`);
+        throw new Error(`Product not found: ${item.name || item.barcode || item.id || item.product_id}`);
       }
 
       if (product.stock_count < item.quantity) {
@@ -414,6 +416,9 @@ app.post('/api/sales', async (req, res) => {
       sale_id: saleId,
       invoice_id,
       total_amount,
+      subtotal: finalSubtotal,
+      discount: finalDiscount,
+      tax: finalTax,
       payment_method,
       timestamp: nowIso,
       items_count: verifiedItems.length,
